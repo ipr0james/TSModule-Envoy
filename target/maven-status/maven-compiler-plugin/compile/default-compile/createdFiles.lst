@@ -1,0 +1,12 @@
+net\thenova\titan\spigot\module\envoy\handler\data\EnvoyLocation.class
+net\thenova\titan\spigot\module\envoy\handler\data\EnvoyTier.class
+net\thenova\titan\spigot\module\envoy\handler\data\EnvoyReward.class
+net\thenova\titan\spigot\module\envoy\handler\EnvoyHandler$1.class
+net\thenova\titan\spigot\module\envoy\commands\CommandEnvoy.class
+net\thenova\titan\spigot\module\envoy\handler\data\EnvoyDataFile.class
+net\thenova\titan\spigot\module\envoy\Envoy.class
+net\thenova\titan\spigot\module\envoy\handler\EnvoyHandler$Status.class
+net\thenova\titan\spigot\module\envoy\handler\EnvoyHandler.class
+net\thenova\titan\spigot\module\envoy\listeners\InteractEvent.class
+net\thenova\titan\spigot\module\envoy\handler\EnvoyRunnable.class
+net\thenova\titan\spigot\module\envoy\listeners\ConnectionEvent.class

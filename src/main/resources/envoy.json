@@ -1,0 +1,11 @@
+{
+  "maximum-crates": 50,
+  "timers": {
+    "duration": 600,
+    "cooldown": 18000
+  },
+  "timer": 10,
+  "locations": [
+
+  ]
+}

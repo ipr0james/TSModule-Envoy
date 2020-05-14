@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: com.github.Arraying:OpenBoard:master">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/github/Arraying/OpenBoard/master/OpenBoard-master.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/com/github/Arraying/OpenBoard/master/OpenBoard-master-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/github/Arraying/OpenBoard/master/OpenBoard-master-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
