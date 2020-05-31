@@ -40,6 +40,7 @@ public enum EnvoyTier {
         json.raw().keySet().forEach(key -> this.rewards.add(json.json(key).marshal(EnvoyReward.class)));
     }
 
+    /* Getters */
     public final String getDisplayName() {
         return WordUtils.capitalize(this.toString().toLowerCase());
     }

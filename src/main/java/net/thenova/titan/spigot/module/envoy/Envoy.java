@@ -1,15 +1,15 @@
 package net.thenova.titan.spigot.module.envoy;
 
+import net.thenova.titan.core.message.MessageHandler;
+import net.thenova.titan.core.users.user.module.UserModule;
 import net.thenova.titan.library.command.data.Command;
 import net.thenova.titan.library.database.connection.IDatabase;
 import net.thenova.titan.library.database.sql.table.DatabaseTable;
-import net.thenova.titan.spigot.data.message.MessageHandler;
+import net.thenova.titan.spigot.module.SpigotModule;
 import net.thenova.titan.spigot.module.envoy.commands.CommandEnvoy;
 import net.thenova.titan.spigot.module.envoy.handler.EnvoyHandler;
 import net.thenova.titan.spigot.module.envoy.listeners.ConnectionEvent;
 import net.thenova.titan.spigot.module.envoy.listeners.InteractEvent;
-import net.thenova.titan.spigot.plugin.IPlugin;
-import net.thenova.titan.spigot.users.user.module.UserModule;
 import org.bukkit.event.Listener;
 
 import java.util.Arrays;
@@ -31,25 +31,27 @@ import java.util.List;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-public final class Envoy implements IPlugin {
+public final class Envoy implements SpigotModule {
 
     @Override
-    public String name() {
+    public final String name() {
         return "Envoy";
     }
 
     @Override
-    public void load() {
+    public final void load() {
         EnvoyHandler.INSTANCE.load();
     }
 
     @Override
-    public void messages(final MessageHandler handler) {
+    public final void messages(final MessageHandler handler) {
         handler.add("prefix.envoy", "&8[&3Envoy&8]&7");
 
         handler.add("module.envoy.command.in-progress", "%prefix.envoy% There is already an envoy in progress.");
         handler.add("module.envoy.command.admin.force-start", "%prefix.info% I hope you're an admin. I started an envoy for you boi.");
         handler.add("module.envoy.command.info", "The next envoy will begin in %timer%&7.");
+
+        handler.add("module.envoy.crate.format", "&7&l» &b&l%tier% Crate &7&l«");
 
         handler.add("module.envoy.timer.seconds", "%prefix.envoy% An envoy will begin in &b%time% &7%value%.");
         handler.add("module.envoy.timer.minutes", "%prefix.envoy% An envoy will begin in &b%time% &7minutes.");
@@ -64,38 +66,38 @@ public final class Envoy implements IPlugin {
     }
 
     @Override
-    public void reload() {
-
+    public final void reload() {
+        EnvoyHandler.INSTANCE.load();
     }
 
     @Override
-    public void shutdown() {
+    public final void shutdown() {
         EnvoyHandler.INSTANCE.shutdown();
     }
 
     @Override
-    public IDatabase database() {
+    public final IDatabase database() {
         return null;
     }
 
     @Override
-    public List<DatabaseTable> tables() {
+    public final List<DatabaseTable> tables() {
         return null;
     }
 
     @Override
-    public List<Listener> listeners() {
+    public final List<Listener> listeners() {
         return Arrays.asList(new ConnectionEvent(), new InteractEvent());
     }
 
     @SuppressWarnings("rawtypes")
     @Override
-    public List<Command> commands() {
+    public final List<Command> commands() {
         return Collections.singletonList(new CommandEnvoy());
     }
 
     @Override
-    public List<Class<? extends UserModule>> user() {
+    public final List<Class<? extends UserModule>> user() {
         return null;
     }
 }

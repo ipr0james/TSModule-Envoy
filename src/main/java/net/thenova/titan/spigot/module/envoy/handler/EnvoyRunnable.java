@@ -1,7 +1,12 @@
 package net.thenova.titan.spigot.module.envoy.handler;
 
-import net.thenova.titan.spigot.data.message.MessageHandler;
-import net.thenova.titan.spigot.data.message.placeholders.Placeholder;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import net.thenova.titan.core.message.MessageBuilder;
+import net.thenova.titan.core.message.MessageHandler;
+import net.thenova.titan.core.message.placeholders.Placeholder;
+import net.thenova.titan.spigot.message.RecipientSpigot;
+import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitRunnable;
 
 /**
@@ -19,25 +24,22 @@ import org.bukkit.scheduler.BukkitRunnable;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@AllArgsConstructor
 public final class EnvoyRunnable extends BukkitRunnable {
 
-    private int counter;
-
-    public EnvoyRunnable(int counter) {
-        this.counter = counter;
-    }
+    @Getter private int counter;
 
     @Override
     public void run() {
         this.counter--;
 
         if(EnvoyHandler.INSTANCE.getStatus() == EnvoyHandler.Status.WAITING) {
-            switch (counter) {
+            switch (this.counter) {
                 case 600:
                 case 300:
-                    MessageHandler.INSTANCE.build("module.envoy.starting.minutes")
-                            .placeholder(new Placeholder("time", (counter / 60)))
-                            .broadcast();
+                    MessageBuilder builder = MessageHandler.INSTANCE.build("module.envoy.starting.minutes")
+                            .placeholder(new Placeholder("time", (counter / 60)));
+                    Bukkit.getOnlinePlayers().forEach(player -> builder.send(new RecipientSpigot(player)));
                     break;
                 case 30:
                 case 15:
@@ -47,26 +49,22 @@ public final class EnvoyRunnable extends BukkitRunnable {
                 case 3:
                 case 2:
                 case 1:
-                    MessageHandler.INSTANCE.build("module.envoy.starting.seconds")
+                    builder = MessageHandler.INSTANCE.build("module.envoy.starting.seconds")
                             .placeholder(new Placeholder("time", counter),
-                                    new Placeholder("value", "second" + (counter > 1 ? "s" : "")))
-                            .broadcast();
+                                    new Placeholder("value", "second" + (counter > 1 ? "s" : "")));
+                    Bukkit.getOnlinePlayers().forEach(player -> builder.send(new RecipientSpigot(player)));
                     break;
             }
 
-            if (counter <= 0) {
+            if (this.counter <= 0) {
                 EnvoyHandler.INSTANCE.start(false);
                 this.cancel();
             }
         } else {
-            if(counter <= 0) {
+            if(this.counter <= 0) {
                 EnvoyHandler.INSTANCE.end(false);
                 this.cancel();
             }
         }
-    }
-
-    public int getCounter() {
-        return counter;
     }
 }

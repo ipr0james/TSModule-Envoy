@@ -1,9 +1,9 @@
 package net.thenova.titan.spigot.module.envoy.listeners;
 
 import de.arraying.openboard.OpenBoardAPI;
-import net.thenova.titan.spigot.TitanSpigot;
+import net.thenova.titan.core.task.TaskHandler;
+import net.thenova.titan.spigot.module.envoy.Envoy;
 import net.thenova.titan.spigot.module.envoy.handler.EnvoyHandler;
-import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -27,10 +27,11 @@ import org.bukkit.event.player.PlayerJoinEvent;
 public final class ConnectionEvent implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onJoin(final PlayerJoinEvent event) {
-        Bukkit.getScheduler().runTaskLater(TitanSpigot.INSTANCE.getPlugin(), () -> {
-            if (EnvoyHandler.INSTANCE.getStatus() == EnvoyHandler.Status.INPROGRESS)
+    public final void onJoin(final PlayerJoinEvent event) {
+        TaskHandler.INSTANCE.getScheduler().scheduleSyncDelayed(Envoy.class, () -> {
+            if (EnvoyHandler.INSTANCE.getStatus() == EnvoyHandler.Status.IN_PROGRESS) {
                 OpenBoardAPI.setScoreboard(event.getPlayer(), "envoy");
+            }
         }, 10);
     }
 }

@@ -1,6 +1,8 @@
 package net.thenova.titan.spigot.module.envoy.listeners;
 
-import net.thenova.titan.spigot.data.message.MessageHandler;
+import net.thenova.titan.core.message.MessageHandler;
+import net.thenova.titan.spigot.compatibility.XHandler;
+import net.thenova.titan.spigot.message.RecipientSpigot;
 import net.thenova.titan.spigot.module.envoy.handler.EnvoyHandler;
 import net.thenova.titan.spigot.util.UValidate;
 import org.bukkit.Material;
@@ -11,6 +13,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * Copyright 2019 ipr0james
@@ -30,37 +33,37 @@ import org.bukkit.event.player.PlayerInteractEvent;
 public final class InteractEvent implements Listener {
 
     @EventHandler(priority = EventPriority.NORMAL)
-    public void onEnvoyClaim(final PlayerInteractEvent event) {
+    public final void onEnvoyClaim(final PlayerInteractEvent event) {
         final Block block = event.getClickedBlock();
         final Action action = event.getAction();
-        final Player player = event.getPlayer();
 
-        if(event.isCancelled()
-                || !(action == Action.RIGHT_CLICK_BLOCK || action == Action.LEFT_CLICK_BLOCK)
+        if(!(action == Action.RIGHT_CLICK_BLOCK
+                    || action == Action.LEFT_CLICK_BLOCK)
                 || EnvoyHandler.INSTANCE.getStatus() == EnvoyHandler.Status.WAITING) {
             return;
         }
 
-        EnvoyHandler.INSTANCE.claim(player, block.getLocation());
+        assert block != null;
+        EnvoyHandler.INSTANCE.claim(event.getPlayer(), block.getLocation());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onEnvoyCreate(final PlayerInteractEvent event) {
+    public final void onEnvoyCreate(final PlayerInteractEvent event) {
         final Block block = event.getClickedBlock();
         final Action action = event.getAction();
         final Player player = event.getPlayer();
+        final ItemStack item = XHandler.getItemInHand(player);
 
-        if(event.isCancelled()
-                || action != Action.RIGHT_CLICK_BLOCK
-                || !player.hasPermission("module.envoy.admin")
-                || !UValidate.notNull(player.getItemInHand())
-                || player.getItemInHand().getType() != Material.STICK
+        if(action != Action.RIGHT_CLICK_BLOCK
+                || !player.hasPermission("envoy.admin")
+                || !UValidate.notNull(item)
+                || item.getType() != Material.STICK
                 || !UValidate.notNull(block) || block.getType() != Material.GLOWSTONE) {
             return;
         }
 
         if(EnvoyHandler.INSTANCE.isLocation(block.getLocation())) {
-            MessageHandler.INSTANCE.build("module.envoy.admin.create.exists").send(player);
+            MessageHandler.INSTANCE.build("module.envoy.admin.create.exists").send(new RecipientSpigot(player));
             return;
         }
 

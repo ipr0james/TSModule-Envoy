@@ -1,6 +1,7 @@
 package net.thenova.titan.spigot.module.envoy.handler.data;
 
 import de.arraying.kotys.JSONField;
+import lombok.Getter;
 
 /**
  * Copyright 2019 ipr0james
@@ -17,15 +18,9 @@ import de.arraying.kotys.JSONField;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@Getter
 public final class EnvoyReward {
 
     @JSONField(key = "command") private String command;
     @JSONField(key = "message") private String message;
-
-    public final String getCommand() {
-        return this.command;
-    }
-    public final String getMessage() {
-        return this.message;
-    }
 }

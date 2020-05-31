@@ -1,5 +1,23 @@
 {
   "name": "${main}",
   "version": "${project.version}",
-  "main": "${mainClass}"
+  "main": "${mainClass}",
+  "permissions": {
+    "envoy.admin": {
+      "default": "OP",
+      "description": "Use all features of Envoy",
+      "children": {
+        "titan.command.envoy": true,
+        "titan.command.envoy.forcestart": true
+      }
+    },
+    "titan.command.envoy": {
+      "default": "true",
+      "description": "View the Envoy event information"
+    },
+    "titan.command.envoy.forcestart": {
+      "default": "OP",
+      "description": "Force start the Envoy event"
+    }
+  }
 }

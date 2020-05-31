@@ -2,9 +2,12 @@ package net.thenova.titan.spigot.module.envoy.handler.data;
 
 import com.gmail.filoghost.holographicdisplays.api.Hologram;
 import com.gmail.filoghost.holographicdisplays.api.HologramsAPI;
-import net.thenova.titan.spigot.TitanSpigot;
-import net.thenova.titan.spigot.data.compatability.model.CompMaterial;
-import net.thenova.titan.spigot.util.UColor;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import net.thenova.titan.core.message.MessageBuilder;
+import net.thenova.titan.core.message.placeholders.Placeholder;
+import net.thenova.titan.spigot.TitanPluginSpigot;
+import net.thenova.titan.spigot.compatibility.compat.XMaterial;
 import org.bukkit.Location;
 import org.bukkit.Material;
 
@@ -23,6 +26,8 @@ import org.bukkit.Material;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@Getter
+@RequiredArgsConstructor
 public final class EnvoyLocation {
 
     private final Location location;
@@ -31,42 +36,37 @@ public final class EnvoyLocation {
     private Hologram holo;
     private boolean claimed = false;
 
-    public EnvoyLocation(final Location location) {
-        this.location = location;
-    }
-
-    public void spawn() {
+    /**
+     * Handle when an Envoy location is being spawned.
+     */
+    public void spawn(final MessageBuilder format) {
         this.claimed = false;
         this.tier = EnvoyTier.getTier();
 
-        this.location.getBlock().setType(CompMaterial.END_PORTAL_FRAME.getMaterial());
+        this.location.getBlock().setType(XMaterial.END_PORTAL_FRAME.getMaterial());
 
-        this.holo = HologramsAPI.createHologram(TitanSpigot.INSTANCE.getPlugin(),
+        this.holo = HologramsAPI.createHologram(TitanPluginSpigot.getPlugin(),
                 new Location(this.location.getWorld(),
                         this.location.getBlockX() + 0.5,
                         this.location.getBlockY() + 0.5,
                         this.location.getZ() + 0.5));
-        this.holo.appendTextLine(UColor.colorize("&7&l» &b&l" + this.tier.getDisplayName() + " Crate &7&l«"));
+        this.holo.appendTextLine(format.placeholder(new Placeholder("tier", tier.getDisplayName())).getMessage() /*"&7&l» &b&l" + this.tier.getDisplayName() + " Crate &7&l«"*/);
     }
 
+    /**
+     * Set the location to claimed and handle clean-up
+     */
     public void claim() {
         this.claimed = true;
 
         this.remove();
     }
 
+    /**
+     * Remove the location, clean-up holo/block
+     */
     public void remove() {
         this.holo.delete();
         this.location.getBlock().setType(Material.AIR);
-    }
-
-    public boolean isClaimed() {
-        return claimed;
-    }
-    public final Location getLocation() {
-        return this.location;
-    }
-    public final EnvoyTier getTier() {
-        return this.tier;
     }
 }

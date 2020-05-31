@@ -3,18 +3,21 @@ package net.thenova.titan.spigot.module.envoy.handler;
 import de.arraying.kotys.JSON;
 import de.arraying.kotys.JSONArray;
 import de.arraying.openboard.OpenBoardAPI;
+import lombok.Getter;
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.PlaceholderHook;
+import net.thenova.titan.core.message.MessageBuilder;
+import net.thenova.titan.core.message.MessageHandler;
+import net.thenova.titan.core.message.placeholders.Placeholder;
+import net.thenova.titan.core.module.ModuleHandler;
+import net.thenova.titan.core.module.data.JSONFileModuleData;
 import net.thenova.titan.library.Titan;
 import net.thenova.titan.library.file.FileHandler;
 import net.thenova.titan.library.file.json.JSONFile;
 import net.thenova.titan.library.util.UConvert;
-import net.thenova.titan.spigot.TitanSpigot;
-import net.thenova.titan.spigot.data.message.MessageHandler;
-import net.thenova.titan.spigot.data.message.placeholders.Placeholder;
-import net.thenova.titan.spigot.data.message.placeholders.PlayerPlaceholder;
-import net.thenova.titan.spigot.module.ModuleHandler;
-import net.thenova.titan.spigot.module.envoy.handler.data.EnvoyDataFile;
+import net.thenova.titan.spigot.TitanPluginSpigot;
+import net.thenova.titan.spigot.message.RecipientSpigot;
+import net.thenova.titan.spigot.message.placeholders.PlaceholderPlayer;
 import net.thenova.titan.spigot.module.envoy.handler.data.EnvoyLocation;
 import net.thenova.titan.spigot.module.envoy.handler.data.EnvoyReward;
 import net.thenova.titan.spigot.module.envoy.handler.data.EnvoyTier;
@@ -41,8 +44,13 @@ import java.util.*;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@Getter
 public enum EnvoyHandler {
     INSTANCE;
+
+    public enum Status {
+        IN_PROGRESS, WAITING
+    }
 
     public static final String REWARDS_PATH = ModuleHandler.INSTANCE.getDataFolder().toPath().toString() + File.separator + "envoy_rewards";
 
@@ -58,8 +66,11 @@ public enum EnvoyHandler {
     private Status status;
     private int cratesClaimed;
 
+    /**
+     * Handle loading for EnvoyHandler
+     */
     public final void load() {
-        this.file = FileHandler.INSTANCE.loadJSONFile(EnvoyDataFile.class);
+        this.file = FileHandler.INSTANCE.loadJSONFile(new JSONFileModuleData("envoy"));
         final JSON json = file.getJSON();
 
         final JSONArray locations = json.array("locations");
@@ -74,11 +85,11 @@ public enum EnvoyHandler {
         // Create files...
         Arrays.stream(EnvoyTier.values()).forEach(EnvoyTier::getDisplayName);
 
-        (runnable = new EnvoyRunnable(json.integer("timer"))).runTaskTimer(TitanSpigot.INSTANCE.getPlugin(), 0, 20);
+        (this.runnable = new EnvoyRunnable(json.integer("timer"))).runTaskTimer(TitanPluginSpigot.getPlugin(), 0, 20);
 
         PlaceholderAPI.registerPlaceholderHook("envoy", new PlaceholderHook() {
             @Override
-            public String onPlaceholderRequest(Player player, String placeholder) {
+            public final String onPlaceholderRequest(final Player player, final String placeholder) {
                 switch (placeholder) {
                     case "count_remaining":
                         return (cratesTotal - cratesClaimed) + "";
@@ -92,6 +103,9 @@ public enum EnvoyHandler {
         });
     }
 
+    /**
+     * Handle Shutdown for EnvoyHandler
+     */
     public void shutdown() {
         this.end(true);
 
@@ -100,48 +114,71 @@ public enum EnvoyHandler {
         this.file.save(json);
     }
 
+    /**
+     * Handle starting of the Envoy event
+     *
+     * @param force - Whether it was forcefully run by an Admin
+     */
     public void start(final boolean force) {
         if(force) {
             this.runnable.cancel();
         }
-        (this.runnable = new EnvoyRunnable(this.timerDuration)).runTaskTimer(TitanSpigot.INSTANCE.getPlugin(), 0, 20);
+        (this.runnable = new EnvoyRunnable(this.timerDuration)).runTaskTimer(TitanPluginSpigot.getPlugin(), 0, 20);
 
-        this.status = Status.INPROGRESS;
+        this.status = Status.IN_PROGRESS;
         this.cratesClaimed = 0;
 
         try {
             ArrayList<EnvoyLocation> locations = new ArrayList<>(this.locations);
             Collections.shuffle(locations);
 
+            final MessageBuilder builder = MessageHandler.INSTANCE.build("module.envoy.crate.format");
             for (int i = 0; i < this.cratesTotal; i++) {
-                locations.get(i).spawn();
+                locations.get(i).spawn(builder);
             }
         } catch (final IndexOutOfBoundsException ex) {
-            Titan.INSTANCE.getLogger().info("[TitanSpigot] [Module] [Envoy] The current number of total crate locations ({}) is less than the maximum set {}",
+            Titan.INSTANCE.getLogger().info("[Titan] [Module] [Envoy] The current number of total crate locations ({}) is less than the maximum set {}",
                     this.locations.size(), this.cratesTotal, ex);
         }
 
-        Bukkit.getOnlinePlayers().forEach(player -> OpenBoardAPI.setScoreboard(player, "envoy"));
-        MessageHandler.INSTANCE.build("module.envoy.begin").broadcast();
+        final MessageBuilder builder = MessageHandler.INSTANCE.build("module.envoy.begin");
+        Bukkit.getOnlinePlayers().forEach(player -> {
+            OpenBoardAPI.setScoreboard(player, "envoy");
+            builder.send(new RecipientSpigot(player));
+        });
     }
 
+    /**
+     * Handle shutdown for the Envoy event if running
+     *
+     * @param shutdown - Whether this was forced because of shutdown or end of the event normally
+     */
     public void end(final boolean shutdown) {
-        if(this.status != Status.INPROGRESS) {
+        if(this.status != Status.IN_PROGRESS) {
             return;
         }
 
         this.runnable.cancel();
         if(!shutdown) {
-            (this.runnable = new EnvoyRunnable(timerCooldown)).runTaskTimer(TitanSpigot.INSTANCE.getPlugin(), 0, 20);
+            (this.runnable = new EnvoyRunnable(timerCooldown)).runTaskTimer(TitanPluginSpigot.getPlugin(), 0, 20);
         }
 
         this.status = Status.WAITING;
         this.locations.forEach(EnvoyLocation::remove);
-        Bukkit.getOnlinePlayers().forEach(player -> OpenBoardAPI.setScoreboard(player, "default"));
 
-        MessageHandler.INSTANCE.build("module.envoy.end").broadcast();
+        final MessageBuilder builder = MessageHandler.INSTANCE.build("module.envoy.end");
+        Bukkit.getOnlinePlayers().forEach(player -> {
+            OpenBoardAPI.setScoreboard(player, "default");
+            builder.send(new RecipientSpigot(player));
+        });
     }
 
+    /**
+     * Handle claiming of a envoy create during the Envoy event
+     *
+     * @param player - Player
+     * @param loc - Location
+     */
     public void claim(final Player player, final Location loc) {
         final EnvoyLocation location = this.locations.stream().filter(check -> check.getLocation().equals(loc)).findFirst().orElse(null);
 
@@ -155,42 +192,40 @@ public enum EnvoyHandler {
         final EnvoyReward reward = location.getTier().getReward();
         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), reward.getCommand().replace("{player}", player.getName()));
 
-        MessageHandler.INSTANCE.build("module.envoy.claim")
-                .placeholder(new PlayerPlaceholder(player),
+        final MessageBuilder builder = MessageHandler.INSTANCE.build("module.envoy.claim")
+                .placeholder(new PlaceholderPlayer(player),
                         new Placeholder("tier", location.getTier().getDisplayName()),
                         new Placeholder("count_claimed", this.cratesClaimed),
-                        new Placeholder("count_total", this.cratesTotal))
-                .broadcast();
+                        new Placeholder("count_total", this.cratesTotal));
+        Bukkit.getOnlinePlayers().forEach(online -> builder.send(new RecipientSpigot(online)));
 
         if(this.cratesClaimed >= this.cratesTotal) {
             end(false);
         }
     }
 
+    /**
+     * Create a new envoy location
+     *
+     * @param player - Player
+     * @param location - Location
+     */
     public void addLocation(final Player player, final Location location) {
         this.locations.add(new EnvoyLocation(location));
 
         JSON json = this.file.getJSON();
         json.array("locations").append(ULocation.toString(location));
         this.file.save(json);
-        MessageHandler.INSTANCE.build("module.envoy.admin.created-location").send(player);
+        MessageHandler.INSTANCE.build("module.envoy.admin.created-location").send(new RecipientSpigot(player));
     }
 
+    /**
+     * Check whether a location is currently set as an Envoy crate
+     *
+     * @param location - Location
+     * @return - Boolean
+     */
     public boolean isLocation(final Location location) {
         return this.locations.stream().anyMatch(loc -> loc.getLocation().equals(location));
-    }
-
-    public final EnvoyRunnable getRunnable() {
-        return this.runnable;
-    }
-    public final Status getStatus() {
-        return this.status;
-    }
-    public final int getCratesClaimed() {
-        return this.cratesClaimed;
-    }
-
-    public enum Status {
-        INPROGRESS, WAITING
     }
 }
